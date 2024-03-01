@@ -27,7 +27,7 @@ impl From<std::string::FromUtf8Error> for Error {
     }
 }
 
-/// A NIB Archive header that describes its data.
+/// A NIB Archive header.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Header {
     pub format_version: u32,
@@ -116,12 +116,18 @@ impl Object {
         self.value_count
     }
 
+    /// Returns a slice of [Values](Value) associated with the current object.
+    ///
+    /// Pass the return value of [NIBArchive::values()] method for a proper result.
     pub fn values<'a>(&self, values: &'a [Value]) -> &'a [Value] {
         let start = self.values_index() as usize;
         let end = start + self.value_count() as usize;
         &values[start..end]
     }
 
+    /// Returns a reference to a [ClassName] associated with the current object.
+    ///
+    /// Pass the return value of [NIBArchive::class_names()] method for a proper result.
     pub fn class_name<'a>(&self, class_names: &'a [ClassName]) -> &'a ClassName {
         &class_names[self.class_name_index() as usize]
     }
@@ -221,6 +227,9 @@ impl Value {
         self.key_index
     }
 
+    /// Returns a reference to a key associated with the current value.
+    ///
+    /// Pass the return value of [NIBArchive::keys()] method for a proper result.
     pub fn key<'a>(&self, keys: &'a [String]) -> &'a String {
         &keys[self.key_index() as usize]
     }
@@ -273,6 +282,9 @@ impl ClassName {
         &self.fallback_classes_indeces
     }
 
+    /// Returns a slice of [ClassNames](ClassName) representing fallback classes.
+    ///
+    /// Pass the return value of [NIBArchive::class_names()] method for a proper result.
     pub fn fallback_classes<'a>(&self, class_names: &'a [ClassName]) -> Vec<&'a ClassName> {
         let mut fallback_classes = Vec::with_capacity(self.fallback_classes_indeces.len());
         for i in self.fallback_classes_indeces() {
@@ -302,7 +314,7 @@ macro_rules! check_position {
     };
 }
 
-/// A NIB Archive parser.
+/// NIB Archive decoder.
 ///
 /// Look at module docs for more info.
 #[derive(Debug, Clone, PartialEq)]
@@ -432,7 +444,7 @@ impl NIBArchive {
     }
 }
 
-/// Decodes a variable integer ([more info](https://github.com/matsmattsson/nibsqueeze/blob/master/NIB Archive.md#varint-coding))
+/// Decodes a variable integer ([more info](https://github.com/matsmattsson/nibsqueeze/blob/master/NibArchive.md#varint-coding))
 /// into a regular i32.
 fn decode_var_int<T: Read + Seek>(reader: &mut T) -> Result<VarInt, Error> {
     let mut result = 0;
