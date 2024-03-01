@@ -1,3 +1,5 @@
+#![doc = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/README.md"))]
+
 use std::{
     fs::File,
     io::{BufReader, Cursor, Read, Seek, SeekFrom},
@@ -27,8 +29,7 @@ impl From<std::string::FromUtf8Error> for Error {
     }
 }
 
-/// A NibArchive header. It contains all the neccessary info
-/// that describes a NibArchive.
+/// A NibArchive header that describes its data.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Header {
     pub format_version: u32,
@@ -71,7 +72,7 @@ impl Header {
 
 /// Represents a single object of a NibArchive.
 ///
-/// An object itself contains an index of a class name, the first index of
+/// An object contains an index of a representing class name, the first index of
 /// a value and the count of all values.
 ///
 /// The following example shows a proccess of decoding a object:
@@ -105,10 +106,6 @@ impl Object {
     }
 
     /// Returns an index of a [ClassName] that describes the current object.
-    ///
-    /// ```
-    ///
-    /// ```
     pub fn class_name_index(&self) -> VarInt {
         self.class_name_index
     }
@@ -129,6 +126,7 @@ impl Object {
     }
 }
 
+/// Represents any object value
 #[derive(Debug, Clone, PartialEq)]
 pub enum ValueVariant {
     Int8(i8),
@@ -143,6 +141,9 @@ pub enum ValueVariant {
     ObjectRef(u32),
 }
 
+/// Represents a single value of a NibArchive.
+///
+/// A value contains an index to a key with its name and a value itself.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Value {
     key_index: VarInt,
@@ -209,19 +210,23 @@ impl Value {
         Ok(Self { key_index, value })
     }
 
+    /// Returns an index to a key with value's name.
     pub fn key_index(&self) -> VarInt {
         self.key_index
     }
 
+    /// Return the underlying value.
     pub fn value(&self) -> &ValueVariant {
         &self.value
     }
 
+    /// Consumes itself and returns a unit of `key_index` and `value`.
     pub fn into_inner(self) -> (VarInt, ValueVariant) {
         (self.key_index, self.value)
     }
 }
 
+/// Represents a single class name of a NibArchive.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ClassName {
     name: String,
@@ -245,14 +250,17 @@ impl ClassName {
         Ok(Self {name, fallback_classes})
     }
 
+    /// Returns the name of a class.
     pub fn name(&self) -> &str {
         &self.name
     }
 
+    /// Returns an array of indecies for fallback classes.
     pub fn fallback_classes(&self) -> &[i32] {
         &self.fallback_classes
     }
 
+    /// Consumes itself and returns a unit of `name` and `fallback_classes`
     pub fn into_inner(self) -> (String, Vec<i32>) {
         (self.name, self.fallback_classes)
     }
@@ -273,6 +281,9 @@ macro_rules! check_position {
     };
 }
 
+/// A NibArchive parser.
+///
+/// Look at module docs for more info.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NibArchive {
     header: Header,
@@ -352,27 +363,27 @@ impl NibArchive {
         })
     }
 
-    /// Returns a reference to a [Header] that describes the current file.
+    /// Returns a reference to a [Header] that describes the current archive.
     pub fn header(&self) -> &Header {
         &self.header
     }
 
-    /// Returns a reference to a slice of containing [Objects](Object).
+    /// Returns an array of archive's [objects](Object).
     pub fn objects(&self) -> &[Object] {
         &self.objects
     }
 
-    /// Returns a reference to a slice of containing keys.
+    /// Returns an array of archive's keys.
     pub fn keys(&self) -> &[String] {
         &self.keys
     }
 
-    /// Returns a reference to a slice of containing [Values](Value).
+    /// Returns an array of archive's [values](Value).
     pub fn values(&self) -> &[Value] {
         &self.values
     }
 
-    /// Returns a reference to a slice of containing [ClassNames](ClassName).
+    /// Returns an array of archive's [class names](ClassName).
     pub fn class_names(&self) -> &[ClassName] {
         &self.class_names
     }
