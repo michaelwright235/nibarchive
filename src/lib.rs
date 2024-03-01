@@ -23,9 +23,7 @@ pub enum Error {
 
 impl From<std::string::FromUtf8Error> for Error {
     fn from(value: std::string::FromUtf8Error) -> Self {
-        Self::NibArchiveFormatError(
-            format!("unable to parse UTF-8 string. {value}")
-        )
+        Self::NibArchiveFormatError(format!("unable to parse UTF-8 string. {value}"))
     }
 }
 
@@ -53,20 +51,18 @@ impl Header {
             reader.read_exact(&mut buf)?;
             values[i] = u32::from_le_bytes(buf);
         }
-        Ok(
-            Self {
-                format_version: values[0],
-                coder_version: values[1],
-                object_count: values[2],
-                offset_objects: values[3],
-                key_count: values[4],
-                offset_keys: values[5],
-                value_count: values[6],
-                offset_values: values[7],
-                class_name_count: values[8],
-                offset_class_names: values[9],
-            }
-        )
+        Ok(Self {
+            format_version: values[0],
+            coder_version: values[1],
+            object_count: values[2],
+            offset_objects: values[3],
+            key_count: values[4],
+            offset_keys: values[5],
+            value_count: values[6],
+            offset_values: values[7],
+            class_name_count: values[8],
+            offset_class_names: values[9],
+        })
     }
 }
 
@@ -261,7 +257,10 @@ impl ClassName {
         reader.read_exact(&mut name_bytes)?;
         name_bytes.pop(); // Name is \0 terminated, so we have to remove the trailing \0
         let name = String::from_utf8(name_bytes)?;
-        Ok(Self {name, fallback_classes_indeces})
+        Ok(Self {
+            name,
+            fallback_classes_indeces,
+        })
     }
 
     /// Returns the name of a class.
@@ -316,7 +315,6 @@ pub struct NibArchive {
 }
 
 impl NibArchive {
-
     /// Reads a NibArchive from a given file.
     pub fn from_file<P: AsRef<std::path::Path>>(path: P) -> Result<Self, Error> {
         let file = File::open(path)?;
@@ -338,7 +336,9 @@ impl NibArchive {
         let mut magic_bytes = [0; 10];
         reader.read_exact(&mut magic_bytes)?;
         if &magic_bytes != MAGIC_BYTES {
-            return Err(Error::NibArchiveFormatError("magic bytes don't match".into()));
+            return Err(Error::NibArchiveFormatError(
+                "magic bytes don't match".into(),
+            ));
         }
 
         // Parse header
