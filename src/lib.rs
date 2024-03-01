@@ -177,8 +177,8 @@ impl Value {
                 reader.read_exact(&mut buf)?;
                 ValueVariant::Int64(i64::from_le_bytes(buf))
             }
-            4 => ValueVariant::Bool(true),
-            5 => ValueVariant::Bool(false),
+            4 => ValueVariant::Bool(false),
+            5 => ValueVariant::Bool(true),
             6 => {
                 let mut buf = [0; 4];
                 reader.read_exact(&mut buf)?;
