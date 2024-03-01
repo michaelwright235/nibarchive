@@ -8,26 +8,26 @@ use std::{
 const MAGIC_BYTES: &[u8; 10] = b"NIBArchive";
 type VarInt = i32;
 
-/// Variants of error that may occur during parsing a NibArchive.
+/// Variants of error that may occur during parsing a NIB Archive.
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     /// An IO error that may occur during opening/reading a file.
     #[error("IOError: {0}")]
     IOError(#[from] std::io::Error),
 
-    /// A format error that may occur during parsing a NibArchive.
+    /// A format error that may occur during parsing a NIB Archive.
     /// Usually it indicates a malformed file.
-    #[error("NibArchive format error: {0}")]
-    NibArchiveFormatError(String),
+    #[error("NIB Archive format error: {0}")]
+    FormatError(String),
 }
 
 impl From<std::string::FromUtf8Error> for Error {
     fn from(value: std::string::FromUtf8Error) -> Self {
-        Self::NibArchiveFormatError(format!("unable to parse UTF-8 string. {value}"))
+        Self::FormatError(format!("unable to parse UTF-8 string. {value}"))
     }
 }
 
-/// A NibArchive header that describes its data.
+/// A NIB Archive header that describes its data.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Header {
     pub format_version: u32,
@@ -66,7 +66,7 @@ impl Header {
     }
 }
 
-/// Represents a single object of a NibArchive.
+/// Represents a single object of a NIB Archive.
 ///
 /// An object contains an index of a representing class name, the first index of
 /// a value and the count of all values.
@@ -147,7 +147,7 @@ pub enum ValueVariant {
     ObjectRef(u32),
 }
 
-/// Represents a single value of a NibArchive.
+/// Represents a single value of a NIB Archive.
 ///
 /// A value contains an index to a key with its name and a value itself.
 #[derive(Debug, Clone, PartialEq)]
@@ -208,7 +208,7 @@ impl Value {
                 ValueVariant::ObjectRef(u32::from_le_bytes(buf))
             }
             _ => {
-                return Err(Error::NibArchiveFormatError(format!(
+                return Err(Error::FormatError(format!(
                     "unknown value type {value_type_byte:#04x}"
                 )))
             }
@@ -236,7 +236,7 @@ impl Value {
     }
 }
 
-/// Represents a single class name of a NibArchive.
+/// Represents a single class name of a NIB Archive.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ClassName {
     name: String,
@@ -292,7 +292,7 @@ impl ClassName {
 macro_rules! check_position {
     ($reader:ident, $offset:expr, $err:literal) => {
         if $reader.stream_position()? != $offset as u64 {
-            return Err(Error::NibArchiveFormatError(format!(
+            return Err(Error::FormatError(format!(
                 "expected {} offset at {} - got {}",
                 $err,
                 $reader.stream_position()?,
@@ -302,11 +302,11 @@ macro_rules! check_position {
     };
 }
 
-/// A NibArchive parser.
+/// A NIB Archive parser.
 ///
 /// Look at module docs for more info.
 #[derive(Debug, Clone, PartialEq)]
-pub struct NibArchive {
+pub struct NIBArchive {
     header: Header,
     objects: Vec<Object>,
     keys: Vec<String>,
@@ -314,21 +314,21 @@ pub struct NibArchive {
     class_names: Vec<ClassName>,
 }
 
-impl NibArchive {
-    /// Reads a NibArchive from a given file.
+impl NIBArchive {
+    /// Reads a NIB Archive from a given file.
     pub fn from_file<P: AsRef<std::path::Path>>(path: P) -> Result<Self, Error> {
         let file = File::open(path)?;
         let mut reader = BufReader::new(file);
         Self::from_reader(&mut reader)
     }
 
-    /// Reads a NibArchive from a given slice of byte.
+    /// Reads a NIB Archive from a given slice of byte.
     pub fn from_bytes<B: AsRef<[u8]>>(bytes: B) -> Result<Self, Error> {
         let mut cursor = Cursor::new(bytes);
         Self::from_reader(&mut cursor)
     }
 
-    /// Reads a NibArchive from a given reader.
+    /// Reads a NIB Archive from a given reader.
     pub fn from_reader<T: Read + Seek>(mut reader: &mut T) -> Result<Self, Error> {
         reader.seek(SeekFrom::Start(0))?;
 
@@ -336,7 +336,7 @@ impl NibArchive {
         let mut magic_bytes = [0; 10];
         reader.read_exact(&mut magic_bytes)?;
         if &magic_bytes != MAGIC_BYTES {
-            return Err(Error::NibArchiveFormatError(
+            return Err(Error::FormatError(
                 "magic bytes don't match".into(),
             ));
         }
@@ -350,10 +350,10 @@ impl NibArchive {
         for _ in 0..header.object_count {
             let obj = Object::try_from_reader(&mut reader)?;
             if (obj.values_index + obj.value_count) as u32 >= header.object_count {
-                return Err(Error::NibArchiveFormatError("value index out of bounds".into()));
+                return Err(Error::FormatError("value index out of bounds".into()));
             }
             if obj.class_name_index as u32 >= header.class_name_count {
-                return Err(Error::NibArchiveFormatError("class name index out of bounds".into()));
+                return Err(Error::FormatError("class name index out of bounds".into()));
             }
             objects.push(obj);
         }
@@ -375,7 +375,7 @@ impl NibArchive {
         for _ in 0..header.value_count {
             let val = Value::try_from_reader(&mut reader)?;
             if val.key_index as u32 >= header.key_count {
-                return Err(Error::NibArchiveFormatError("key index out of bounds".into()));
+                return Err(Error::FormatError("key index out of bounds".into()));
             }
             values.push(val);
         }
@@ -387,7 +387,7 @@ impl NibArchive {
             let cls = ClassName::try_from_reader(&mut reader)?;
             for index in &cls.fallback_classes_indeces {
                 if *index as u32 >= header.class_name_count {
-                    return Err(Error::NibArchiveFormatError("class name (fallback class) index out of bounds".into()));
+                    return Err(Error::FormatError("class name (fallback class) index out of bounds".into()));
                 }
             }
             class_names.push(cls);
@@ -432,7 +432,7 @@ impl NibArchive {
     }
 }
 
-/// Decodes a variable integer ([more info](https://github.com/matsmattsson/nibsqueeze/blob/master/NibArchive.md#varint-coding))
+/// Decodes a variable integer ([more info](https://github.com/matsmattsson/nibsqueeze/blob/master/NIB Archive.md#varint-coding))
 /// into a regular i32.
 fn decode_var_int<T: Read + Seek>(reader: &mut T) -> Result<VarInt, Error> {
     let mut result = 0;
