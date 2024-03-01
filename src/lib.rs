@@ -47,9 +47,9 @@ impl Header {
         // Reads 40 bytes of a header
         let mut buf = [0; 4];
         let mut values = [0; 10];
-        for i in 0..10 {
+        for item in &mut values {
             reader.read_exact(&mut buf)?;
-            values[i] = u32::from_le_bytes(buf);
+            *item = u32::from_le_bytes(buf);
         }
         Ok(Self {
             format_version: values[0],
