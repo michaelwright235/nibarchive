@@ -120,6 +120,16 @@ impl Object {
         self.value_count
     }
 
+    pub fn values<'a>(&self, values: &'a [Value]) -> &'a [Value] {
+        let start = self.values_index() as usize;
+        let end = start + self.value_count() as usize;
+        &values[start..end]
+    }
+
+    pub fn class_name<'a>(&self, class_names: &'a [ClassName]) -> &'a ClassName {
+        &class_names[self.class_name_index() as usize]
+    }
+
     /// Consumes itself and returns a unit of `class_name_index`, `values_index` and `value_count`.
     pub fn into_inner(self) -> (VarInt, VarInt, VarInt) {
         (self.class_name_index, self.values_index, self.value_count)
@@ -215,6 +225,10 @@ impl Value {
         self.key_index
     }
 
+    pub fn key<'a>(&self, keys: &'a [String]) -> &'a String {
+        &keys[self.key_index() as usize]
+    }
+
     /// Return the underlying value.
     pub fn value(&self) -> &ValueVariant {
         &self.value
@@ -230,24 +244,24 @@ impl Value {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ClassName {
     name: String,
-    fallback_classes: Vec<i32>,
+    fallback_classes_indeces: Vec<i32>,
 }
 
 impl ClassName {
     pub(crate) fn try_from_reader<T: Read + Seek>(mut reader: &mut T) -> Result<Self, Error> {
         let length = decode_var_int(&mut reader)?;
         let fallback_classes_count = decode_var_int(&mut reader)?;
-        let mut fallback_classes = Vec::with_capacity(fallback_classes_count as usize);
+        let mut fallback_classes_indeces = Vec::with_capacity(fallback_classes_count as usize);
         for _ in 0..fallback_classes_count {
             let mut buf = [0; 4];
             reader.read_exact(&mut buf)?;
-            fallback_classes.push(i32::from_le_bytes(buf));
+            fallback_classes_indeces.push(i32::from_le_bytes(buf));
         }
         let mut name_bytes = vec![0; length as usize];
         reader.read_exact(&mut name_bytes)?;
         name_bytes.pop(); // Name is \0 terminated, so we have to remove the trailing \0
         let name = String::from_utf8(name_bytes)?;
-        Ok(Self {name, fallback_classes})
+        Ok(Self {name, fallback_classes_indeces})
     }
 
     /// Returns the name of a class.
@@ -255,14 +269,22 @@ impl ClassName {
         &self.name
     }
 
-    /// Returns an array of indecies for fallback classes.
-    pub fn fallback_classes(&self) -> &[i32] {
-        &self.fallback_classes
+    /// Returns an array of indeces for fallback classes.
+    pub fn fallback_classes_indeces(&self) -> &[i32] {
+        &self.fallback_classes_indeces
+    }
+
+    pub fn fallback_classes<'a>(&self, class_names: &'a [ClassName]) -> Vec<&'a ClassName> {
+        let mut fallback_classes = Vec::with_capacity(self.fallback_classes_indeces.len());
+        for i in self.fallback_classes_indeces() {
+            fallback_classes.push(&class_names[*i as usize])
+        }
+        fallback_classes
     }
 
     /// Consumes itself and returns a unit of `name` and `fallback_classes`
     pub fn into_inner(self) -> (String, Vec<i32>) {
-        (self.name, self.fallback_classes)
+        (self.name, self.fallback_classes_indeces)
     }
 }
 
@@ -386,6 +408,10 @@ impl NibArchive {
     /// Returns an array of archive's [class names](ClassName).
     pub fn class_names(&self) -> &[ClassName] {
         &self.class_names
+    }
+
+    pub fn into_inner(self) -> (Vec<Object>, Vec<String>, Vec<Value>, Vec<ClassName>) {
+        (self.objects, self.keys, self.values, self.class_names)
     }
 }
 
