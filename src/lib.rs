@@ -348,7 +348,14 @@ impl NibArchive {
         // Parse objects
         let mut objects = Vec::with_capacity(header.object_count as usize);
         for _ in 0..header.object_count {
-            objects.push(Object::try_from_reader(&mut reader)?);
+            let obj = Object::try_from_reader(&mut reader)?;
+            if (obj.values_index + obj.value_count) as u32 >= header.object_count {
+                return Err(Error::NibArchiveFormatError("value index out of bounds".into()));
+            }
+            if obj.class_name_index as u32 >= header.class_name_count {
+                return Err(Error::NibArchiveFormatError("class name index out of bounds".into()));
+            }
+            objects.push(obj);
         }
         check_position!(reader, header.offset_keys, "keys");
 
@@ -366,14 +373,24 @@ impl NibArchive {
         // Parse values
         let mut values = Vec::with_capacity(header.value_count as usize);
         for _ in 0..header.value_count {
-            values.push(Value::try_from_reader(&mut reader)?);
+            let val = Value::try_from_reader(&mut reader)?;
+            if val.key_index as u32 >= header.key_count {
+                return Err(Error::NibArchiveFormatError("key index out of bounds".into()));
+            }
+            values.push(val);
         }
         check_position!(reader, header.offset_class_names, "class names'");
 
         // Parse class names
         let mut class_names = Vec::with_capacity(header.class_name_count as usize);
         for _ in 0..header.class_name_count {
-            class_names.push(ClassName::try_from_reader(&mut reader)?);
+            let cls = ClassName::try_from_reader(&mut reader)?;
+            for index in &cls.fallback_classes_indeces {
+                if *index as u32 >= header.class_name_count {
+                    return Err(Error::NibArchiveFormatError("class name (fallback class) index out of bounds".into()));
+                }
+            }
+            class_names.push(cls);
         }
 
         Ok(Self {
