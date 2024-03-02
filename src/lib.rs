@@ -176,7 +176,7 @@ impl NIBArchive {
         let mut keys_bytes = Vec::with_capacity(self.keys.len() * (16 + 2));
         for key in &self.keys {
             keys_bytes.append(&mut encode_var_int(key.len() as i32));
-            keys_bytes.extend_from_slice(key.as_bytes());
+            keys_bytes.extend(key.as_bytes());
         }
 
         let mut values_bytes = Vec::with_capacity(self.values.len() * (8 + 2));

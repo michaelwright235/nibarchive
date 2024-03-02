@@ -58,16 +58,16 @@ impl Header {
 
     pub(crate) fn to_bytes(&self) -> Vec<u8> {
         let mut result = Vec::with_capacity(40);
-        result.extend_from_slice(&self.format_version.to_le_bytes());
-        result.extend_from_slice(&self.coder_version.to_le_bytes());
-        result.extend_from_slice(&self.object_count.to_le_bytes());
-        result.extend_from_slice(&self.offset_objects.to_le_bytes());
-        result.extend_from_slice(&self.key_count.to_le_bytes());
-        result.extend_from_slice(&self.offset_keys.to_le_bytes());
-        result.extend_from_slice(&self.value_count.to_le_bytes());
-        result.extend_from_slice(&self.offset_values.to_le_bytes());
-        result.extend_from_slice(&self.class_name_count.to_le_bytes());
-        result.extend_from_slice(&self.offset_class_names.to_le_bytes());
+        result.extend(&self.format_version.to_le_bytes());
+        result.extend(&self.coder_version.to_le_bytes());
+        result.extend(&self.object_count.to_le_bytes());
+        result.extend(&self.offset_objects.to_le_bytes());
+        result.extend(&self.key_count.to_le_bytes());
+        result.extend(&self.offset_keys.to_le_bytes());
+        result.extend(&self.value_count.to_le_bytes());
+        result.extend(&self.offset_values.to_le_bytes());
+        result.extend(&self.class_name_count.to_le_bytes());
+        result.extend(&self.offset_class_names.to_le_bytes());
         result
     }
 }
