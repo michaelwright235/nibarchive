@@ -3,7 +3,7 @@
 The `.nib` file is mainly used by Interface Builder to encode `.xib` files.
 Both store information about creating a GUI for macOS and iOS applications.
 The difference is, `.xib` is a human-readable xml used during development,
-but a `.nib` is a compiled version of it.
+and a `.nib` is a compiled version of it.
 
 There're two versions of `.nib`s. The first one is a NIB Archive (used by UIKit
 on iPhones since iOS 6) whose decoded structure somewhat resembles Cocoa Keyed
@@ -21,7 +21,7 @@ a NIB Archive parser written in Python.
 
 ## Known issues
 
-Some NIB Archives (presumably ones with coder version 10) have some extra bytes
+Some NIB Archives (presumably ones with a coder version of 10) have some extra bytes
 at the end of a file. Those bytes are not handled and their purpose is yet unknown.
 
 ## Example

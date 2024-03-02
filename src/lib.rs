@@ -42,7 +42,7 @@ impl From<std::string::FromUtf8Error> for Error {
     }
 }
 
-/// A NIB Archive header.
+/// Represents a header of a NIB Archive.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Header {
     pub format_version: u32,
@@ -431,6 +431,11 @@ impl ClassName {
         &self.fallback_classes_indeces
     }
 
+    /// Sets fallback classes indeces of a class.
+    pub fn set_fallback_classes_indeces(&mut self, indeces: Vec<i32>) {
+        self.fallback_classes_indeces = indeces;
+    }
+
     /// Returns a slice of [ClassNames](ClassName) representing fallback classes.
     ///
     /// Pass the return value of [NIBArchive::class_names()] method for a proper result.
@@ -448,7 +453,7 @@ impl ClassName {
     }
 }
 
-/// After reading the current block of data it ensures that the current stream
+/// After reading the current block of data we check that the current stream
 /// position is equal to the start position of a next block.
 macro_rules! check_position {
     ($reader:ident, $offset:expr, $err:literal) => {
@@ -463,7 +468,7 @@ macro_rules! check_position {
     };
 }
 
-/// NIB Archive encoder/decoder.
+/// NIB Archive decoder/encoder.
 ///
 /// Look at module docs for more info.
 #[derive(Debug, Clone, PartialEq)]
@@ -651,9 +656,9 @@ impl NIBArchive {
 
     /// Returns a reference to a [Header] that describes the current archive.
     ///
-    /// If you're creating a new archive with the [new](Self::new()) method,
+    /// If you're creating a new archive using the [new](Self::new()) method,
     /// the header is going to be empty, except for `format_version` and `coder_version`
-    /// fields. It will be filled after encoding your archive.
+    /// fields. Other fields will be filled after encoding your archive.
     ///
     /// If you read an archive and then change its properties,
     /// the header won't reflect these changes until the next encoding.
@@ -686,7 +691,7 @@ impl NIBArchive {
         &self.keys
     }
 
-    /// Returns a reference to a vector of archive's keys.
+    /// Returns a mutable reference to a vector of archive's keys.
     pub fn keys_mut(&mut self) -> &mut Vec<String> {
         &mut self.keys
     }
