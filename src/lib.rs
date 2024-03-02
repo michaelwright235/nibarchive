@@ -150,14 +150,29 @@ impl Object {
         self.class_name_index
     }
 
+    /// Sets object's class name index.
+    pub fn set_class_name_index(&mut self, index: VarInt) {
+        self.class_name_index = index
+    }
+
     /// Returns the first index of a [Value] that the object contains.
     pub fn values_index(&self) -> VarInt {
         self.values_index
     }
 
+    /// Sets value's first index of an object.
+    pub fn set_values_index(&mut self, index: VarInt) {
+        self.values_index = index
+    }
+
     /// Returns the count of all [Values](Value) that the object contains.
     pub fn value_count(&self) -> VarInt {
         self.value_count
+    }
+
+    /// Sets values' count of an object.
+    pub fn set_value_count(&mut self, count: VarInt) {
+        self.value_count = count
     }
 
     /// Returns a slice of [Values](Value) associated with the current object.
@@ -328,6 +343,11 @@ impl Value {
         self.key_index
     }
 
+    /// Sets value's key index.
+    pub fn set_key_index(&mut self, index: VarInt) {
+        self.key_index = index
+    }
+
     /// Returns a reference to a key associated with the current value.
     ///
     /// Pass the return value of [NIBArchive::keys()] method for a proper result.
@@ -338,6 +358,11 @@ impl Value {
     /// Return the underlying value.
     pub fn value(&self) -> &ValueVariant {
         &self.value
+    }
+
+    /// Sets value.
+    pub fn set_value(&mut self, value: ValueVariant) {
+        self.value = value
     }
 
     /// Consumes itself and returns a unit of `key_index` and `value`.
@@ -394,6 +419,11 @@ impl ClassName {
     /// Returns the name of a class.
     pub fn name(&self) -> &str {
         &self.name
+    }
+
+    /// Sets class name.
+    pub fn set_name(&mut self, name: String) {
+        self.name = name;
     }
 
     /// Returns an array of indeces for fallback classes.
