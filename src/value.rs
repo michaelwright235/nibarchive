@@ -40,9 +40,9 @@ pub struct Value {
 impl Value {
     pub(crate) fn try_from_reader<T: Read + Seek>(mut reader: &mut T) -> Result<Self, Error> {
         let key_index = decode_var_int(&mut reader)?;
-        let mut _value_type_byte = [0; 1];
-        reader.read_exact(&mut _value_type_byte)?;
-        let value_type_byte = _value_type_byte[0];
+        let mut value_type_byte = [0; 1];
+        reader.read_exact(&mut value_type_byte)?;
+        let value_type_byte = value_type_byte[0];
         let value = match value_type_byte {
             TYPE_INT8 => {
                 let mut buf = [0; 1];

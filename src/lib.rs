@@ -64,7 +64,7 @@ impl NIBArchive {
             values,
             class_names,
             format_version: DEFAULT_FORMAT_VERSION,
-            coder_version: DEFAULT_CODER_VERSION
+            coder_version: DEFAULT_CODER_VERSION,
         }
     }
 
@@ -152,7 +152,7 @@ impl NIBArchive {
             values,
             class_names,
             format_version: header.format_version,
-            coder_version: header.coder_version
+            coder_version: header.coder_version,
         })
     }
 
@@ -292,9 +292,9 @@ fn decode_var_int<T: Read + Seek>(reader: &mut T) -> Result<VarInt, Error> {
     let mut result = 0;
     let mut shift = 0;
     loop {
-        let mut _current_byte = [0; 1];
-        reader.read_exact(&mut _current_byte)?;
-        let current_byte = _current_byte[0];
+        let mut current_byte = [0; 1];
+        reader.read_exact(&mut current_byte)?;
+        let current_byte = current_byte[0];
         result |= (current_byte as VarInt & 0x7F) << shift;
         shift += 7;
         if (current_byte & 128) != 0 {

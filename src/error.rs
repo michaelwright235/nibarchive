@@ -1,7 +1,7 @@
 /// Variants of error that may occur during encoding/decoding a NIB Archive.
 #[derive(Debug)]
 pub enum Error {
-    /// An IO error that may occur during opening/reading/writing a file.
+    /// An IO error that may occur during working with a file/stream.
     IOError(std::io::Error),
 
     /// A format error that may occur only during decoding a NIB Archive.
@@ -28,6 +28,6 @@ impl From<std::io::Error> for Error {
 
 impl From<std::string::FromUtf8Error> for Error {
     fn from(value: std::string::FromUtf8Error) -> Self {
-        Self::FormatError(format!("Unable to parse UTF-8 string. {value}"))
+        Self::FormatError(value.to_string())
     }
 }
