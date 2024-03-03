@@ -69,7 +69,7 @@ impl Object {
 
     /// Returns a slice of [Values](Value) associated with the current object.
     ///
-    /// Pass the return value of [NIBArchive::values()] method for a proper result.
+    /// Pass the return value of [crate::NIBArchive::values()] method for a proper result.
     pub fn values<'a>(&self, values: &'a [Value]) -> &'a [Value] {
         let start = self.values_index() as usize;
         let end = start + self.value_count() as usize;
@@ -78,7 +78,7 @@ impl Object {
 
     /// Returns a reference to a [ClassName] associated with the current object.
     ///
-    /// Pass the return value of [NIBArchive::class_names()] method for a proper result.
+    /// Pass the return value of [crate::NIBArchive::class_names()] method for a proper result.
     pub fn class_name<'a>(&self, class_names: &'a [ClassName]) -> &'a ClassName {
         &class_names[self.class_name_index() as usize]
     }

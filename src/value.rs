@@ -154,7 +154,7 @@ impl Value {
 
     /// Returns a reference to a key associated with the current value.
     ///
-    /// Pass the return value of [NIBArchive::keys()] method for a proper result.
+    /// Pass the return value of [crate::NIBArchive::keys()] method for a proper result.
     pub fn key<'a>(&self, keys: &'a [String]) -> &'a String {
         &keys[self.key_index() as usize]
     }

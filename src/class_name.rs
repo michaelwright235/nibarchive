@@ -71,7 +71,7 @@ impl ClassName {
 
     /// Returns a slice of [ClassNames](ClassName) representing fallback classes.
     ///
-    /// Pass the return value of [NIBArchive::class_names()] method for a proper result.
+    /// Pass the return value of [crate::NIBArchive::class_names()] method for a proper result.
     pub fn fallback_classes<'a>(&self, class_names: &'a [ClassName]) -> Vec<&'a ClassName> {
         let mut fallback_classes = Vec::with_capacity(self.fallback_classes_indeces.len());
         for i in self.fallback_classes_indeces() {
