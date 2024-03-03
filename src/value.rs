@@ -1,6 +1,18 @@
 use crate::{decode_var_int, encode_var_int, Error, VarInt};
 use std::io::{Read, Seek};
 
+const TYPE_INT8: u8 = 0;
+const TYPE_INT16: u8 = 1;
+const TYPE_INT32: u8 = 2;
+const TYPE_INT64: u8 = 3;
+const TYPE_BOOL_FALSE: u8 = 4;
+const TYPE_BOOL_TRUE: u8 = 5;
+const TYPE_FLOAT: u8 = 6;
+const TYPE_DOUBLE: u8 = 7;
+const TYPE_DATA: u8 = 8;
+const TYPE_NIL: u8 = 9;
+const TYPE_OBJECT_REF: u8 = 10;
+
 /// Represents any object value.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ValueVariant {
@@ -32,53 +44,53 @@ impl Value {
         reader.read_exact(&mut _value_type_byte)?;
         let value_type_byte = _value_type_byte[0];
         let value = match value_type_byte {
-            0 => {
+            TYPE_INT8 => {
                 let mut buf = [0; 1];
                 reader.read_exact(&mut buf)?;
                 ValueVariant::Int8(i8::from_le_bytes(buf))
             }
-            1 => {
+            TYPE_INT16 => {
                 let mut buf = [0; 2];
                 reader.read_exact(&mut buf)?;
                 ValueVariant::Int16(i16::from_le_bytes(buf))
             }
-            2 => {
+            TYPE_INT32 => {
                 let mut buf = [0; 4];
                 reader.read_exact(&mut buf)?;
                 ValueVariant::Int32(i32::from_le_bytes(buf))
             }
-            3 => {
+            TYPE_INT64 => {
                 let mut buf = [0; 8];
                 reader.read_exact(&mut buf)?;
                 ValueVariant::Int64(i64::from_le_bytes(buf))
             }
-            4 => ValueVariant::Bool(false),
-            5 => ValueVariant::Bool(true),
-            6 => {
+            TYPE_BOOL_FALSE => ValueVariant::Bool(false),
+            TYPE_BOOL_TRUE => ValueVariant::Bool(true),
+            TYPE_FLOAT => {
                 let mut buf = [0; 4];
                 reader.read_exact(&mut buf)?;
                 ValueVariant::Float(f32::from_le_bytes(buf))
             }
-            7 => {
+            TYPE_DOUBLE => {
                 let mut buf = [0; 8];
                 reader.read_exact(&mut buf)?;
                 ValueVariant::Double(f64::from_le_bytes(buf))
             }
-            8 => {
+            TYPE_DATA => {
                 let length = decode_var_int(&mut reader)?;
                 let mut buf = vec![0; length as usize];
                 reader.read_exact(&mut buf)?;
                 ValueVariant::Data(buf)
             }
-            9 => ValueVariant::Nil,
-            10 => {
+            TYPE_NIL => ValueVariant::Nil,
+            TYPE_OBJECT_REF => {
                 let mut buf = [0; 4];
                 reader.read_exact(&mut buf)?;
                 ValueVariant::ObjectRef(u32::from_le_bytes(buf))
             }
             _ => {
                 return Err(Error::FormatError(format!(
-                    "unknown value type {value_type_byte:#04x}"
+                    "Unknown value type {value_type_byte:#04x}"
                 )))
             }
         };
@@ -90,46 +102,46 @@ impl Value {
 
         match &self.value {
             ValueVariant::Int8(v) => {
-                bytes.push(0);
+                bytes.push(TYPE_INT8);
                 bytes.extend_from_slice(&v.to_le_bytes());
             }
             ValueVariant::Int16(v) => {
-                bytes.push(1);
+                bytes.push(TYPE_INT16);
                 bytes.extend_from_slice(&v.to_le_bytes());
             }
             ValueVariant::Int32(v) => {
-                bytes.push(2);
+                bytes.push(TYPE_INT32);
                 bytes.extend_from_slice(&v.to_le_bytes());
             }
             ValueVariant::Int64(v) => {
-                bytes.push(3);
+                bytes.push(TYPE_INT64);
                 bytes.extend_from_slice(&v.to_le_bytes());
             }
             ValueVariant::Bool(v) => {
                 if !v {
-                    bytes.push(4);
+                    bytes.push(TYPE_BOOL_FALSE);
                 } else {
-                    bytes.push(5);
+                    bytes.push(TYPE_BOOL_TRUE);
                 }
             }
             ValueVariant::Float(v) => {
-                bytes.push(6);
+                bytes.push(TYPE_FLOAT);
                 bytes.extend_from_slice(&v.to_le_bytes());
             }
             ValueVariant::Double(v) => {
-                bytes.push(7);
+                bytes.push(TYPE_DOUBLE);
                 bytes.extend_from_slice(&v.to_le_bytes());
             }
             ValueVariant::Data(v) => {
-                bytes.push(8);
+                bytes.push(TYPE_DATA);
                 bytes.append(&mut encode_var_int(v.len() as i32));
                 bytes.extend_from_slice(v);
             }
             ValueVariant::Nil => {
-                bytes.push(9);
+                bytes.push(TYPE_NIL);
             }
             ValueVariant::ObjectRef(v) => {
-                bytes.push(10);
+                bytes.push(TYPE_OBJECT_REF);
                 bytes.extend_from_slice(&v.to_le_bytes());
             }
         }
