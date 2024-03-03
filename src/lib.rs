@@ -5,7 +5,8 @@ mod error;
 mod header;
 mod object;
 mod value;
-pub use crate::{class_name::*, error::*, header::*, object::*, value::*};
+pub use crate::{class_name::*, error::*, object::*, value::*};
+use header::*;
 
 use std::{
     fs::File,
@@ -13,6 +14,8 @@ use std::{
 };
 
 const MAGIC_BYTES: &[u8; 10] = b"NIBArchive";
+const DEFAULT_FORMAT_VERSION: u32 = 1;
+const DEFAULT_CODER_VERSION: u32 = 9;
 type VarInt = i32;
 
 /// After reading the current block of data we check that the current stream
@@ -35,11 +38,12 @@ macro_rules! check_position {
 /// Look at the module docs for more details.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NIBArchive {
-    header: Header,
     objects: Vec<Object>,
     keys: Vec<String>,
     values: Vec<Value>,
     class_names: Vec<ClassName>,
+    format_version: u32,
+    coder_version: u32,
 }
 
 impl NIBArchive {
@@ -55,11 +59,12 @@ impl NIBArchive {
         class_names: Vec<ClassName>,
     ) -> Self {
         Self {
-            header: Header::default(),
             objects,
             keys,
             values,
             class_names,
+            format_version: DEFAULT_FORMAT_VERSION,
+            coder_version: DEFAULT_CODER_VERSION
         }
     }
 
@@ -142,30 +147,31 @@ impl NIBArchive {
         }
 
         Ok(Self {
-            header,
             objects,
             keys,
             values,
             class_names,
+            format_version: header.format_version,
+            coder_version: header.coder_version
         })
     }
 
-    /// Encodes an archive and saves it to a file with a given path.
-    pub fn to_file<P: AsRef<std::path::Path>>(&mut self, path: P) -> Result<(), Error> {
+    /// Encodes the archive and saves it to a file with a given path.
+    pub fn to_file<P: AsRef<std::path::Path>>(&self, path: P) -> Result<(), Error> {
         let file = File::create(path)?;
         let mut reader = BufWriter::new(file);
         self.to_writer(&mut reader)
     }
 
-    /// Encodes an archive and returns a vector of bytes.
-    pub fn to_bytes(&mut self) -> Vec<u8> {
+    /// Encodes the archive and returns a vector of bytes.
+    pub fn to_bytes(&self) -> Vec<u8> {
         let mut cursor = Cursor::new(Vec::with_capacity(1024));
         self.to_writer(&mut cursor).unwrap(); // should be safe since we're writing into a vector
         cursor.into_inner()
     }
 
-    /// Encodes an archive using a given writer.
-    pub fn to_writer<T: Write>(&mut self, writer: &mut T) -> Result<(), Error> {
+    /// Encodes the archive using a given writer.
+    pub fn to_writer<T: Write>(&self, writer: &mut T) -> Result<(), Error> {
         // Each objects contains 3 fields with up to 2 bytes VarInt
         let mut objects_bytes = Vec::with_capacity(self.objects.len() * 3 * 2);
         for obj in &self.objects {
@@ -190,8 +196,8 @@ impl NIBArchive {
         }
 
         let header = Header {
-            format_version: self.header.format_version,
-            coder_version: self.header.coder_version,
+            format_version: self.format_version,
+            coder_version: self.coder_version,
             object_count: self.objects.len() as u32,
             offset_objects: 50,
             key_count: self.keys.len() as u32,
@@ -210,69 +216,66 @@ impl NIBArchive {
         writer.write_all(&values_bytes)?;
         writer.write_all(&classes_bytes)?;
         writer.flush()?;
-        self.header = header;
 
         Ok(())
     }
 
-    /// Returns a reference to a [Header] that describes the current archive.
-    ///
-    /// If you're creating a new archive using the [new](Self::new()) method,
-    /// the header is going to be empty, except for `format_version` and `coder_version`
-    /// fields. Other fields will be filled after encoding your archive.
-    ///
-    /// If you read an archive and then change its properties,
-    /// the header won't reflect these changes until the next encoding.
-    pub fn header(&self) -> &Header {
-        &self.header
+    /// Return a format version of the archive.
+    pub fn format_version(&self) -> u32 {
+        self.format_version
     }
 
-    /// Set header's format version field.
+    /// Sets a format version of the archive.
     pub fn set_format_version(&mut self, value: u32) {
-        self.header.format_version = value;
+        self.format_version = value;
     }
 
-    /// Set header's coder version field.
+    /// Returns a coder version of the archive.
+    pub fn coder_version(&self) -> u32 {
+        self.coder_version
+    }
+
+    /// Set a coder version of the archive.
     pub fn set_coder_version(&mut self, value: u32) {
-        self.header.coder_version = value;
+        self.coder_version = value;
     }
 
-    /// Returns a reference to a vector of archive's [objects](Object).
+    /// Returns a reference to a vector of the archive's [objects](Object).
     pub fn objects(&self) -> &[Object] {
         &self.objects
     }
 
-    /// Returns a mutable reference to a vector of archive's [objects](Object).
+    /// Returns a mutable reference to a vector of the archive's [objects](Object).
     pub fn objects_mut(&mut self) -> &mut Vec<Object> {
         &mut self.objects
     }
 
-    /// Returns an array of archive's keys.
+    /// Returns an array of the archive's keys.
     pub fn keys(&self) -> &[String] {
         &self.keys
     }
 
-    /// Returns a mutable reference to a vector of archive's keys.
+    /// Returns a mutable reference to a vector of the archive's keys.
     pub fn keys_mut(&mut self) -> &mut Vec<String> {
         &mut self.keys
     }
 
-    /// Returns a reference to a vector of archive's [values](Value).
+    /// Returns a reference to a vector of the archive's [values](Value).
     pub fn values(&self) -> &[Value] {
         &self.values
     }
 
-    /// Returns a mutable reference to a vector of archive's [values](Value).
+    /// Returns a mutable reference to a vector of the archive's [values](Value).
     pub fn values_mut(&mut self) -> &mut Vec<Value> {
         &mut self.values
     }
 
-    /// Returns a reference to a vector of archive's [class names](ClassName).
+    /// Returns a reference to a vector of the archive's [class names](ClassName).
     pub fn class_names(&self) -> &[ClassName] {
         &self.class_names
     }
 
-    /// Returns a mutable reference to a vector of archive's [class names](ClassName).
+    /// Returns a mutable reference to a vector of the archive's [class names](ClassName).
     pub fn class_names_mut(&mut self) -> &mut Vec<ClassName> {
         &mut self.class_names
     }

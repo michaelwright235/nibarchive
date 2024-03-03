@@ -2,8 +2,8 @@ use crate::Error;
 use std::io::{Read, Seek};
 
 /// Represents a header of a NIB Archive.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Header {
+#[derive(Debug)]
+pub(crate) struct Header {
     pub format_version: u32,
     pub coder_version: u32,
     pub object_count: u32,
@@ -14,23 +14,6 @@ pub struct Header {
     pub offset_values: u32,
     pub class_name_count: u32,
     pub offset_class_names: u32,
-}
-
-impl Default for Header {
-    fn default() -> Self {
-        Self {
-            format_version: 1,
-            coder_version: 9,
-            object_count: Default::default(),
-            offset_objects: Default::default(),
-            key_count: Default::default(),
-            offset_keys: Default::default(),
-            value_count: Default::default(),
-            offset_values: Default::default(),
-            class_name_count: Default::default(),
-            offset_class_names: Default::default(),
-        }
-    }
 }
 
 impl Header {
