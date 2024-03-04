@@ -49,10 +49,38 @@ pub struct NIBArchive {
 impl NIBArchive {
     /// Creates a new NIB Archive from `objects`, `keys`, `values` and `class_names`.
     ///
-    /// This method **does not** check the input values. For example, a situation when an object's
-    /// key index is out of bounds of the `keys` parameter is unchecked. To ensure properly formed
-    /// archive you should check those yourself.
+    /// Returns an error if one of the elements references an element that is out of bounds.
     pub fn new(
+        objects: Vec<Object>,
+        keys: Vec<String>,
+        values: Vec<Value>,
+        class_names: Vec<ClassName>,
+    ) -> Result<Self, Error> {
+        for obj in &objects {
+            Self::check_object(&obj, values.len() as u32, class_names.len() as u32)?;
+        }
+        for val in &values {
+            Self::check_value(&val, keys.len() as u32)?;
+        }
+        for cls in &class_names {
+            Self::check_class_name(&cls, class_names.len() as u32)?;
+        }
+        Ok(Self {
+            objects,
+            keys,
+            values,
+            class_names,
+            format_version: DEFAULT_FORMAT_VERSION,
+            coder_version: DEFAULT_CODER_VERSION,
+        })
+    }
+
+    /// Creates a new NIB Archive from `objects`, `keys`, `values` and `class_names`
+    /// without any checks.
+    ///
+    /// This method **does not** check the input values. For example, a situation when an object's
+    /// key index is out of bounds of the `keys` parameter is unchecked.
+    pub fn new_unchecked(
         objects: Vec<Object>,
         keys: Vec<String>,
         values: Vec<Value>,
@@ -100,12 +128,7 @@ impl NIBArchive {
         let mut objects = Vec::with_capacity(header.object_count as usize);
         for _ in 0..header.object_count {
             let obj = Object::try_from_reader(&mut reader)?;
-            if (obj.values_index() + obj.value_count()) as u32 > header.value_count {
-                return Err(Error::FormatError("Value index out of bounds".into()));
-            }
-            if obj.class_name_index() as u32 > header.class_name_count {
-                return Err(Error::FormatError("Class name index out of bounds".into()));
-            }
+            Self::check_object(&obj, header.value_count, header.class_name_count)?;
             objects.push(obj);
         }
         check_position!(reader, header.offset_keys, "keys");
@@ -125,9 +148,7 @@ impl NIBArchive {
         let mut values = Vec::with_capacity(header.value_count as usize);
         for _ in 0..header.value_count {
             let val = Value::try_from_reader(&mut reader)?;
-            if val.key_index() as u32 > header.key_count {
-                return Err(Error::FormatError("Key index out of bounds".into()));
-            }
+            Self::check_value(&val, header.key_count)?;
             values.push(val);
         }
         check_position!(reader, header.offset_class_names, "class names'");
@@ -136,13 +157,7 @@ impl NIBArchive {
         let mut class_names = Vec::with_capacity(header.class_name_count as usize);
         for _ in 0..header.class_name_count {
             let cls = ClassName::try_from_reader(&mut reader)?;
-            for index in cls.fallback_classes_indeces() {
-                if *index as u32 > header.class_name_count {
-                    return Err(Error::FormatError(
-                        "Class name (fallback class) index out of bounds".into(),
-                    ));
-                }
-            }
+            Self::check_class_name(&cls, header.class_name_count)?;
             class_names.push(cls);
         }
 
@@ -154,6 +169,34 @@ impl NIBArchive {
             format_version: header.format_version,
             coder_version: header.coder_version,
         })
+    }
+
+    fn check_object(obj: &Object, value_count: u32, class_name_count: u32) -> Result<(), Error> {
+        if (obj.values_index() + obj.value_count()) as u32 > value_count {
+            return Err(Error::FormatError("Value index out of bounds".into()));
+        }
+        if obj.class_name_index() as u32 > class_name_count {
+            return Err(Error::FormatError("Class name index out of bounds".into()));
+        }
+        Ok(())
+    }
+
+    fn check_value(val: &Value, key_count: u32) -> Result<(), Error> {
+        if val.key_index() as u32 > key_count {
+            return Err(Error::FormatError("Key index out of bounds".into()));
+        }
+        Ok(())
+    }
+
+    fn check_class_name(cls: &ClassName, class_name_count: u32) -> Result<(), Error> {
+        for index in cls.fallback_classes_indeces() {
+            if *index as u32 > class_name_count {
+                return Err(Error::FormatError(
+                    "Class name (fallback class) index out of bounds".into(),
+                ));
+            }
+        }
+        Ok(())
     }
 
     /// Encodes the archive and saves it to a file with a given path.
@@ -245,9 +288,16 @@ impl NIBArchive {
         &self.objects
     }
 
-    /// Returns a mutable reference to a vector of the archive's [objects](Object).
-    pub fn objects_mut(&mut self) -> &mut Vec<Object> {
-        &mut self.objects
+    /// Sets the archive's objects.
+    ///
+    /// Returns an error if one of objects references to a value or a class name
+    /// that is out of bounds.
+    pub fn set_objects(&mut self, objects: Vec<Object>) -> Result<(), Error> {
+        for obj in &objects {
+            Self::check_object(obj, self.values.len() as u32, self.class_names.len() as u32)?;
+        }
+        self.objects = objects;
+        Ok(())
     }
 
     /// Returns an array of the archive's keys.
@@ -255,9 +305,9 @@ impl NIBArchive {
         &self.keys
     }
 
-    /// Returns a mutable reference to a vector of the archive's keys.
-    pub fn keys_mut(&mut self) -> &mut Vec<String> {
-        &mut self.keys
+    /// Sets the archive's keys.
+    pub fn set_keys(&mut self, keys: Vec<String>) {
+        self.keys = keys;
     }
 
     /// Returns a reference to a vector of the archive's [values](Value).
@@ -265,9 +315,15 @@ impl NIBArchive {
         &self.values
     }
 
-    /// Returns a mutable reference to a vector of the archive's [values](Value).
-    pub fn values_mut(&mut self) -> &mut Vec<Value> {
-        &mut self.values
+    /// Sets the archive's values.
+    ///
+    /// Returns an error if one of values references to a key that is out of bounds.
+    pub fn set_values(&mut self, values: Vec<Value>) -> Result<(), Error> {
+        for val in &values {
+            Self::check_value(val, self.keys.len() as u32)?;
+        }
+        self.values = values;
+        Ok(())
     }
 
     /// Returns a reference to a vector of the archive's [class names](ClassName).
@@ -275,9 +331,15 @@ impl NIBArchive {
         &self.class_names
     }
 
-    /// Returns a mutable reference to a vector of the archive's [class names](ClassName).
-    pub fn class_names_mut(&mut self) -> &mut Vec<ClassName> {
-        &mut self.class_names
+    /// Sets the archive's class names.
+    ///
+    /// Returns an error if one of classes references to a fallback class that is out of bounds.
+    pub fn set_class_names(&mut self, class_names: Vec<ClassName>) -> Result<(), Error> {
+        for cls in &class_names {
+            Self::check_class_name(cls, class_names.len() as u32)?;
+        }
+        self.class_names = class_names;
+        Ok(())
     }
 
     /// Consumes itself and returns returns a unit of objects, keys, values and class names.
