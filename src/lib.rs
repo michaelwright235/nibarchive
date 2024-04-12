@@ -57,13 +57,13 @@ impl NIBArchive {
         class_names: Vec<ClassName>,
     ) -> Result<Self, Error> {
         for obj in &objects {
-            Self::check_object(&obj, values.len() as u32, class_names.len() as u32)?;
+            Self::check_object(obj, values.len() as u32, class_names.len() as u32)?;
         }
         for val in &values {
-            Self::check_value(&val, keys.len() as u32)?;
+            Self::check_value(val, keys.len() as u32)?;
         }
         for cls in &class_names {
-            Self::check_class_name(&cls, class_names.len() as u32)?;
+            Self::check_class_name(cls, class_names.len() as u32)?;
         }
         Ok(Self {
             objects,
