@@ -2,14 +2,15 @@
 
 Decode and encode NIB Archive `.nib` files.
 
-The `.nib` file is mainly used by Interface Builder component of Xcode to encode `.xib` files.
+`.nib` files are mainly used by Interface Builder component of Xcode to encode `.xib` files.
 Both store information about creating a GUI for macOS and iOS applications.
 The difference is, `.xib` is a human-readable xml used only during development,
-and a `.nib` is a compiled version of it.
+and `.nib` is a compiled version of it.
 
-There're two versions of `.nib`s. The first one is a NIB Archive (used by UIKit
+There're two variations of `.nib`s. The first one is a NIB Archive (used by UIKit
 on iPhones since iOS 6) whose decoded structure somewhat resembles Cocoa Keyed
-Archive. The second one is actually a Cocoa Keyed Archive (used prior iOS 6).
+Archive. This library is designed to work with these `.nib`s.
+The second one is actually a Cocoa Keyed Archive (used prior iOS 6).
 macOS uses both versions.
 
 The file format has been described in detail in the
