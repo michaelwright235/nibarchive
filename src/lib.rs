@@ -199,21 +199,21 @@ impl NIBArchive {
         Ok(())
     }
 
-    /// Encodes the archive and saves it to a file with a given path.
+    /// Encodes the given archive and saves it to a file with a given path.
     pub fn to_file<P: AsRef<std::path::Path>>(&self, path: P) -> Result<(), Error> {
         let file = File::create(path)?;
         let mut reader = BufWriter::new(file);
         self.to_writer(&mut reader)
     }
 
-    /// Encodes the archive and returns a vector of bytes.
+    /// Encodes the given archive and returns a vector of bytes.
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut cursor = Cursor::new(Vec::with_capacity(1024));
         self.to_writer(&mut cursor).unwrap(); // should be safe since we're writing into a vector
         cursor.into_inner()
     }
 
-    /// Encodes the archive using a given writer.
+    /// Encodes the given archive using a writer.
     pub fn to_writer<T: Write>(&self, writer: &mut T) -> Result<(), Error> {
         // Each objects contains 3 fields with up to 2 bytes VarInt
         let mut objects_bytes = Vec::with_capacity(self.objects.len() * 3 * 2);
@@ -263,22 +263,22 @@ impl NIBArchive {
         Ok(())
     }
 
-    /// Return a format version of the archive.
+    /// Returns the format version of the given archive.
     pub fn format_version(&self) -> u32 {
         self.format_version
     }
 
-    /// Sets a format version of the archive.
+    /// Sets the format version of the given archive.
     pub fn set_format_version(&mut self, value: u32) {
         self.format_version = value;
     }
 
-    /// Returns a coder version of the archive.
+    /// Returns the coder version of the given archive.
     pub fn coder_version(&self) -> u32 {
         self.coder_version
     }
 
-    /// Set a coder version of the archive.
+    /// Set the coder version of the given archive.
     pub fn set_coder_version(&mut self, value: u32) {
         self.coder_version = value;
     }

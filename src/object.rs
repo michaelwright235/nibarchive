@@ -3,7 +3,7 @@ use std::io::{Read, Seek};
 
 /// Represents a single object of a NIB Archive.
 ///
-/// An object contains an index of a representing class name, the first index of
+/// An object contains the index of a representing class name, the first index of
 /// a value and the count of all values.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Object {
@@ -37,7 +37,7 @@ impl Object {
         }
     }
 
-    /// Returns an index of a [ClassName] that describes the current object.
+    /// Returns the index of a [ClassName] that describes the current object.
     pub fn class_name_index(&self) -> VarInt {
         self.class_name_index
     }
