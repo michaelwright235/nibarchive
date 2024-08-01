@@ -7,6 +7,8 @@ mod object;
 mod value;
 pub use crate::{class_name::*, error::*, object::*, value::*};
 use header::*;
+#[cfg(feature = "json")]
+pub mod json;
 
 use std::{
     fs::File,
