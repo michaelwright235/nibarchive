@@ -24,7 +24,56 @@ a NIB Archive parser written in Python.
 Some NIB Archives (presumably ones with a coder version of 10) have some extra bytes
 at the end of a file. Those bytes are not handled and their purpose is unknown yet.
 
-## Example
+## CLI
+
+Install the CLI tool with the following command:
+
+```
+cargo install --git https://github.com/MatrixEditor/nibarchive
+```
+
+### Examples
+
+Decode a `.nib` file to JSON:
+
+```shell
+nibarchive tojson "path/to/file.nib" "path/to/output.json"
+```
+
+### CLI Help
+
+Here's the help message:
+
+```shell
+> nibarchive --help
+Usage: nibarchive <command> [<args>]
+
+Decode and encode NIB Archive `.nib` files. # Examples nibarchive tojson "path/to/file.nib" "path/to/output.json"
+
+Options:
+  --help            display usage information
+
+Commands:
+  tojson            Decode a `.nib` file to JSON.
+
+```
+
+```shell
+Usage: nibarchive tojson <input> <output>
+
+Decode a `.nib` file to JSON.
+
+Positional Arguments:
+  input             the path to the `.nib` file to decode
+  output            the path to the output json file
+
+Options:
+  --help            display usage information
+
+
+```
+
+## Library Example
 
 The following example prints all archive's objects and their values:
 

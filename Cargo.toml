@@ -20,4 +20,6 @@ required-features = ["cli"]
 [lib]
 
 [features]
+default = ["cli"]
 json = ["dep:serde_json", "dep:serde", "dep:anyhow"]
+cli = ["dep:argh", "json"]
