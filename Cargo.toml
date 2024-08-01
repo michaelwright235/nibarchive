@@ -6,3 +6,20 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Michael Wright <maiklpolkovnikov@gmail.com>"]
 repository = "https://github.com/michaelwright235/nibarchive"
+
+[dependencies]
+argh = { version = "0.1.12", optional = true }
+serde = { version = "1.0.204", features = ["derive"], optional = true }
+serde_json = { version = "1.0.121", optional = true }
+anyhow = { version = "1.0.79", optional = true }
+
+[[bin]]
+name = "nibarchive"
+required-features = ["cli"]
+
+[lib]
+
+[features]
+default = ["cli"]
+json = ["dep:serde_json", "dep:serde", "dep:anyhow"]
+cli = ["dep:argh", "json"]
